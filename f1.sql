@@ -12,8 +12,8 @@ BEGIN
 	UPDATE fromLines f
 	 INNER JOIN call_forwarding fwd ON fwd.from=f.to
         SET  f.to=fwd.to,
-	         f.line=concat(line,'{',case when instr(f.line,concat('{',fwd.to,'}'))>0 then '|' else fwd.to end,'}')    
-     WHERE  instr(f.line,'{|}')=0; /* and f.line>'' instead slq_safe_updates=0, but work unstable*/
+	     f.line=concat(line,'{',case when instr(f.line,concat('{',fwd.to,'}'))>0 then '|' else fwd.to end,'}')    
+     WHERE  instr(f.line,'{|}')=0; /* and f.line>'' instead of slq_safe_updates=0, but work unstable*/
  END WHILE;
  SET SQL_SAFE_UPDATES=1;
 END; //
@@ -36,7 +36,7 @@ BEGIN
    UNION
    SELECT `from` FROM fromLines where `from`=`to`;     #inserting wrong(cycled) numbers
 
-/*Any forwarding wich not added and wich refences on any granted numbers - is granted forwarding*/
+/*Any forwarding which not added and which references on any granted numbers - is granted forwarding*/
  WHILE (ROW_COUNT()>0) DO
 	INSERT INTO grantedNums(number) 
     SELECT nfwd.from FROM grantedNums g   
