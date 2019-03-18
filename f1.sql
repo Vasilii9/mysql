@@ -79,15 +79,19 @@ SELECT rate,name,ia `input calls`,oa `output calls`,il `input calls(sec)`,ol `ou
 	round(ia*@k1+oa*@k2+il*@k3+ol*@k4,2) `common activiti score` FROM commonActivities LIMIT 10;
 
 ########## 3. Top 10: Users with highest charges, and daily distribution for each of them #########
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
 DROP TABLE IF EXISTS `highestcharges`;
-CREATE TABLE highestcharges(rate int not null primary key auto_increment,name varchar(255),expences float);
-INSERT INTO highestcharges(name,expences)
-	SELECT concat(accs.name,'(UID:',accs.UID,')'),
+CREATE TABLE highestcharges(name varchar(255),UID int,day int,expences float);
+INSERT INTO highestcharges(name,UID,day,expences)
+	SELECT concat(accs.name,'(UID:',accs.UID,')'),accs.UID,TO_DAYS(cl.Timestamp_start) call_day,
  	 round(sum(CEILING((time_to_sec(cl.Timestamp_end)-time_to_sec(cl.Timestamp_start))/60))
 	 *(select money from rates where id=3) ,2) `expences` FROM call_logs cl
 	INNER JOIN accounts accs ON accs.UID=cl.UID
 	LEFT JOIN grantedNums gn ON gn.number=cl.to
 	WHERE cl.call_dir='out' and isnull(gn.number)
-	GROUP BY accs.name ORDER BY  `expences` DESC
-	LIMIT 10;
-SELECT * FROM highestcharges;
+	GROUP BY accs.name, call_day ORDER BY  `expences` DESC;
+SELECT h.name,from_days(h.day) `day`,h.expences `day expences`,cExp.commonExp `commone expcences` FROM highestcharges h
+INNER JOIN (select UID,round(sum(expences),2) commonExp from highestcharges group by UID LIMIT 10) cExp ON cExp.UID=h.UID
+ORDER BY cExp.commonExp DESC ;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
